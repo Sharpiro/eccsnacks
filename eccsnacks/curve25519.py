@@ -2,6 +2,8 @@ import sys
 if sys.version_info >= (3,):
     xrange = range
 
+MajorVersion = sys.version_info.major
+
 __all__ = ['scalarmult', 'scalarmult_base']
 
 # implementation is a translation of the pseudocode
@@ -84,13 +86,22 @@ def X25519(k, u):
 def unpack(s):
     if len(s) != 32:
         raise ValueError('Invalid Curve25519 scalar (len=%d)' % len(s))
-    t = sum(ord(s[i]) << (8 * i) for i in range(31))
-    t += ((ord(s[31]) & 0x7f) << 248)
+
+    if MajorVersion < 3:
+        t = sum(ord(s[i]) << (8 * i) for i in range(31))
+        t += ((ord(s[31]) & 0x7f) << 248)
+        return t
+    else:
+        t = sum(s[i] << (8 * i) for i in range(31))
+        t += ((s[31] & 0x7f) << 248)
     return t
 
 
 def pack(n):
-    return ''.join([chr((n >> (8 * i)) & 255) for i in range(32)])
+    if MajorVersion < 3:
+        return ''.join([chr((n >> (8 * i)) & 255) for i in range(32)])
+    else:
+        return bytes([(n >> (8 * i)) & 255 for i in range(32)])
 
 
 def clamp(n):
